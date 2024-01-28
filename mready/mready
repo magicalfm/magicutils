@@ -1,0 +1,60 @@
+#!/bin/bash -e
+
+# 引数の初期化
+EP_FLAG=false
+EP=""
+
+# 引数を解析
+while (( "$#" )); do
+  case "$1" in
+    --ep)
+      EP_FLAG=true
+      EP=$2
+      shift 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+# 引数のチェック
+if [ "$#" -ne 1 ]; then
+    echo "使用法: $0 [--ep EP] 音声ファイルが配置されているディレクトリ"
+    exit 1
+fi
+
+# 引数がディレクトリかどうかをチェック
+if [ ! -d "$1" ]; then
+    echo "エラー: '$1' はディレクトリではありません。"
+    exit 1
+fi
+
+# lufs-normalizer コマンドがインストールされているかチェック
+if ! command -v lufs-normalizer &> /dev/null; then
+    echo "エラー: 'lufs-normalizer' コマンドがインストールされていません。"
+    echo "インストールするには、 https://github.com/upamune/lufs-normalizer をcloneしてリポジトリルートで以下のコマンドを実行してください："
+    echo "$ make install"
+    exit 1
+fi
+
+# Unixタイムスタンプを取得
+unixtime=$(date +%s)
+
+# 新しいディレクトリを作成 (カレントディレクトリの下のoutputディレクトリ内)
+output_dir="output/"
+if [ "$EP_FLAG" = true ]; then
+    output_dir+="ep${EP}_"
+fi
+output_dir+="$unixtime"
+mkdir -p "$output_dir"
+
+# ファイルを新しいディレクトリにコピー
+cp "$1/MIC1.WAV" "$output_dir/upamune.wav"
+cp "$1/MIC2.WAV" "$output_dir/michiru_da.wav"
+
+# lufs-normalizer コマンドを実行
+lufs-normalizer --output_file "$output_dir/upamune_normalized.wav" "$output_dir/upamune.wav"
+lufs-normalizer --output_file "$output_dir/michiru_da_normalized.wav" "$output_dir/michiru_da.wav"
+
+echo "処理が完了しました。出力ディレクトリ: $output_dir"
