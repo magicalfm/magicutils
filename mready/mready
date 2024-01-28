@@ -3,6 +3,10 @@
 # 引数の初期化
 EP_FLAG=false
 EP=""
+MIC1="upamune"
+MIC2="michiru_da"
+MIC3=""
+MIC4=""
 
 # 引数を解析
 while (( "$#" )); do
@@ -10,6 +14,22 @@ while (( "$#" )); do
     --ep)
       EP_FLAG=true
       EP=$2
+      shift 2
+      ;;
+    --MIC1|--mic1)
+      MIC1=$2
+      shift 2
+      ;;
+    --MIC2|--mic2)
+      MIC2=$2
+      shift 2
+      ;;
+    --MIC3|--mic3)
+      MIC3=$2
+      shift 2
+      ;;
+    --MIC4|--mic4)
+      MIC4=$2
       shift 2
       ;;
     *)
@@ -20,7 +40,7 @@ done
 
 # 引数のチェック
 if [ "$#" -ne 1 ]; then
-    echo "使用法: $0 [--ep EP] 音声ファイルが配置されているディレクトリ"
+    echo "使用法: $0 [--ep EP] [--MIC1 名前] [--MIC2 名前] [--MIC3 名前] [--MIC4 名前] 音声ファイルが配置されているディレクトリ"
     exit 1
 fi
 
@@ -49,12 +69,17 @@ fi
 output_dir+="$unixtime"
 mkdir -p "$output_dir"
 
-# ファイルを新しいディレクトリにコピー
-cp "$1/MIC1.WAV" "$output_dir/upamune.wav"
-cp "$1/MIC2.WAV" "$output_dir/michiru_da.wav"
+# ファイルを新しいディレクトリにコピーし、リネーム
+cp "$1/MIC1.WAV" "$output_dir/${MIC1}.wav"
+cp "$1/MIC2.WAV" "$output_dir/${MIC2}.wav"
+[ -n "$MIC3" ] && cp "$1/MIC3.WAV" "$output_dir/${MIC3}.wav"
+[ -n "$MIC4" ] && cp "$1/MIC4.WAV" "$output_dir/${MIC4}.wav"
 
-# lufs-normalizer コマンドを実行
-lufs-normalizer --output_file "$output_dir/upamune_normalized.wav" "$output_dir/upamune.wav"
-lufs-normalizer --output_file "$output_dir/michiru_da_normalized.wav" "$output_dir/michiru_da.wav"
+# lufs-normalizer コマンドを実行し、正規化されたファイルを保存
+lufs-normalizer --output_file "$output_dir/${MIC1}_normalized.wav" "$output_dir/${MIC1}.wav"
+lufs-normalizer --output_file "$output_dir/${MIC2}_normalized.wav" "$output_dir/${MIC2}.wav"
+[ -n "$MIC3" ] && lufs-normalizer --output_file "$output_dir/${MIC3}_normalized.wav" "$output_dir/${MIC3}.wav"
+[ -n "$MIC4" ] && lufs-normalizer --output_file "$output_dir/${MIC4}_normalized.wav" "$output_dir/${MIC4}.wav"
+
 
 echo "処理が完了しました。出力ディレクトリ: $output_dir"
