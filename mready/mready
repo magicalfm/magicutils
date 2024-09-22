@@ -8,6 +8,8 @@ MIC2="michiru_da"
 MIC3=""
 MIC4=""
 
+PATH=~/.rye/shims:$PATH
+
 # 引数を解析
 while (( "$#" )); do
   case "$1" in
@@ -50,11 +52,9 @@ if [ ! -d "$1" ]; then
     exit 1
 fi
 
-# lufs-normalizer コマンドがインストールされているかチェック
-if ! command -v lufs-normalizer &> /dev/null; then
-    echo "エラー: 'lufs-normalizer' コマンドがインストールされていません。"
-    echo "インストールするには、 https://github.com/upamune/lufs-normalizer をcloneしてリポジトリルートで以下のコマンドを実行してください："
-    echo "$ make install"
+# uvx コマンドがインストールされているかチェック
+if ! command -v uvx &> /dev/null; then
+    echo "エラー: 'uvx' コマンドがインストールされていません。"
     exit 1
 fi
 
@@ -75,11 +75,15 @@ cp "$1/MIC2.WAV" "$output_dir/${MIC2}.wav"
 [ -n "$MIC3" ] && cp "$1/MIC3.WAV" "$output_dir/${MIC3}.wav"
 [ -n "$MIC4" ] && cp "$1/MIC4.WAV" "$output_dir/${MIC4}.wav"
 
+# uvx コマンドを変数として定義
+UVX_LUFS_NORMALIZER="uvx --from git+https://github.com/upamune/lufs-normalizer lufs-normalizer@bd46466"
+
 # lufs-normalizer コマンドを実行し、正規化されたファイルを保存
-lufs-normalizer --output_file "$output_dir/${MIC1}_normalized.wav" "$output_dir/${MIC1}.wav"
-lufs-normalizer --output_file "$output_dir/${MIC2}_normalized.wav" "$output_dir/${MIC2}.wav"
-[ -n "$MIC3" ] && lufs-normalizer --output_file "$output_dir/${MIC3}_normalized.wav" "$output_dir/${MIC3}.wav"
-[ -n "$MIC4" ] && lufs-normalizer --output_file "$output_dir/${MIC4}_normalized.wav" "$output_dir/${MIC4}.wav"
+$UVX_LUFS_NORMALIZER --output_file "$output_dir/${MIC1}_normalized.wav" "$output_dir/${MIC1}.wav"
+$UVX_LUFS_NORMALIZER --output_file "$output_dir/${MIC2}_normalized.wav" "$output_dir/${MIC2}.wav"
+[ -n "$MIC3" ] && $UVX_LUFS_NORMALIZER --output_file "$output_dir/${MIC3}_normalized.wav" "$output_dir/${MIC3}.wav"
+[ -n "$MIC4" ] && $UVX_LUFS_NORMALIZER --output_file "$output_dir/${MIC4}_normalized.wav" "$output_dir/${MIC4}.wav"
 
 
 echo "処理が完了しました。出力ディレクトリ: $output_dir"
+
