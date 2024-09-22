@@ -8,7 +8,9 @@ MIC2="michiru_da"
 MIC3=""
 MIC4=""
 
-PATH=~/.rye/shims:$PATH
+echo "$(python3 --version)"
+
+uv tool install --from git+https://github.com/upamune/lufs-normalizer lufs-normalizer
 
 # 引数を解析
 while (( "$#" )); do
@@ -76,7 +78,7 @@ cp "$1/MIC2.WAV" "$output_dir/${MIC2}.wav"
 [ -n "$MIC4" ] && cp "$1/MIC4.WAV" "$output_dir/${MIC4}.wav"
 
 # uvx コマンドを変数として定義
-UVX_LUFS_NORMALIZER="uvx --from git+https://github.com/upamune/lufs-normalizer lufs-normalizer@bd46466"
+UVX_LUFS_NORMALIZER="uv tool run lufs-normalizer "
 
 # lufs-normalizer コマンドを実行し、正規化されたファイルを保存
 $UVX_LUFS_NORMALIZER --output_file "$output_dir/${MIC1}_normalized.wav" "$output_dir/${MIC1}.wav"
