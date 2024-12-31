@@ -9,19 +9,25 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sort"
 	"text/template"
+	"time"
 
 	"github.com/mmcdole/gofeed"
 	"github.com/sourcegraph/conc/pool"
 )
 
-const rssLink = "https://rss.listen.style/p/magicalfm/rss"
+const (
+	rssLink         = "https://rss.listen.style/p/magicalfm/rss"
+	episodesPerFile = 20 // 1ファイルあたりのエピソード数
+)
 
 type Item struct {
 	Title       string
 	Description string
 	Link        string
 	Transcript  string
+	Published   *time.Time
 }
 
 func getRssFeed(url string) (*gofeed.Feed, error) {
@@ -77,6 +83,7 @@ func constructItems(ctx context.Context, feed *gofeed.Feed) ([]Item, error) {
 				Description: item.Content,
 				Link:        item.Link,
 				Transcript:  transcript,
+				Published:   item.PublishedParsed,
 			}
 
 			return nil
@@ -115,13 +122,34 @@ func realMain() error {
 		return err
 	}
 
-	buf := bytes.NewBuffer(nil)
-	if err := tmpl.Execute(buf, items); err != nil {
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Published.Before(*items[j].Published)
+	})
+
+	dir := "output"
+	if err := os.RemoveAll("output"); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile("dist/output.md", buf.Bytes(), 0644); err != nil {
-		return err
+	for i := 0; i < len(items); i += episodesPerFile {
+		end := i + episodesPerFile
+		if end > len(items) {
+			end = len(items)
+		}
+
+		chunk := items[i:end]
+		buf := bytes.NewBuffer(nil)
+		if err := tmpl.Execute(buf, chunk); err != nil {
+			return err
+		}
+
+		filename := fmt.Sprintf("%s/transcript_%d.md", dir, i/episodesPerFile+1)
+		if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
+			return err
+		}
 	}
 
 	return nil
